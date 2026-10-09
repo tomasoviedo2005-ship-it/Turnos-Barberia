@@ -1,0 +1,98 @@
+# Tomás Oviedo — Barbería Turnos (GitHub Pages + Firebase)
+
+## Qué incluye
+- Turnos compartidos en tiempo real mediante Cloud Firestore.
+- Reserva atómica: si dos clientes intentan tomar el mismo horario, solo uno lo consigue.
+- Al confirmar, guarda el turno y abre WhatsApp al 2216713957 con el texto solicitado.
+- Acceso de administrador mediante Firebase Authentication (correo + contraseña).
+- El administrador puede eliminar reservas y reiniciar la semana.
+- Mantiene los horarios de la página original.
+
+## Importante sobre la contraseña
+La contraseña `Totolobo2005` no se incluye en el HTML porque cualquier visitante podría verla en el código. En su lugar, creá una cuenta de administrador en Firebase Authentication y asignale esa contraseña allí. La seguridad real la aplican las reglas de Firestore y el documento `admins/{UID}`.
+
+## Paso 1 — Crear el proyecto
+1. Entrá a https://console.firebase.google.com/ e iniciá sesión con tu cuenta Google.
+2. Tocá **Crear un proyecto** y poné, por ejemplo, `Tomas Oviedo Turnos`.
+3. Google Analytics no es necesario; podés desactivarlo.
+4. Tocá **Crear proyecto**.
+
+## Paso 2 — Registrar la web
+1. En la pantalla del proyecto, tocá el ícono `</>` para agregar una aplicación web.
+2. Nombre: `Barbería Turnos`.
+3. Registrá la aplicación. No necesitás configurar Firebase Hosting porque vas a seguir usando GitHub Pages.
+4. Firebase te mostrará un objeto `firebaseConfig`. Copiá los valores `apiKey`, `authDomain`, `projectId` y `appId`.
+
+## Paso 3 — Pegar la configuración
+1. Abrí `index.html` para editarlo.
+2. Buscá `const firebaseConfig = {`.
+3. Reemplazá `PEGAR_API_KEY`, `PEGAR_PROJECT_ID` y `PEGAR_APP_ID` por los valores de tu consola. Conservá las comillas.
+4. Guardá el archivo.
+
+Ejemplo de formato (NO uses estos valores inventados):
+```js
+const firebaseConfig = {
+  apiKey: "TU_API_KEY_REAL",
+  authDomain: "TU_PROYECTO.firebaseapp.com",
+  projectId: "TU_PROJECT_ID_REAL",
+  appId: "TU_APP_ID_REAL"
+};
+```
+
+## Paso 4 — Activar Authentication
+1. En Firebase, abrí **Compilación / Build → Authentication**.
+2. Tocá **Comenzar / Get started**.
+3. En **Sign-in method**, activá **Anonymous** y guardá.
+4. Activá también **Email/Password** y guardá.
+
+## Paso 5 — Crear la base de datos
+1. Abrí **Build → Firestore Database**.
+2. Tocá **Crear base de datos**.
+3. Elegí una ubicación y creala. Para un proyecto pequeño, el plan Spark gratuito suele alcanzar dentro de sus límites; revisá siempre los límites que muestra Firebase.
+4. Entrá en la pestaña **Reglas / Rules**.
+5. Reemplazá las reglas existentes por el contenido completo de `firestore.rules`.
+6. Tocá **Publicar / Publish**. No dejes la base en modo de prueba.
+
+## Paso 6 — Crear la cuenta administradora
+1. En **Authentication → Users**, tocá **Add user / Agregar usuario**.
+2. Poné un correo tuyo al que tengas acceso y como contraseña `Totolobo2005` (o una contraseña más fuerte si preferís).
+3. Guardá el usuario.
+4. En la lista de usuarios, copiá su **UID** exacto.
+
+## Paso 7 — Dar permiso de administrador al UID
+1. Abrí **Firestore Database → Data / Datos**.
+2. Creá una colección llamada `admins`.
+3. Como ID del documento, pegá el UID del usuario administrador del paso anterior (no uses el correo como ID).
+4. Agregá un campo cualquiera, por ejemplo:
+   - Nombre del campo: `role`
+   - Tipo: `string`
+   - Valor: `admin`
+5. Guardá el documento.
+
+El UID debe coincidir exactamente con el usuario que creaste en Authentication. Las reglas solo permiten administrar turnos a una cuenta cuyo UID exista en `admins`.
+
+## Paso 8 — Subir a GitHub Pages
+1. Abrí el repositorio de la página de turnos en GitHub.
+2. Abrí el archivo `index.html` y tocá el lápiz para editarlo, o eliminá/reemplazá el contenido con este nuevo `index.html`.
+3. Pegá la configuración Firebase real antes de guardar.
+4. Subí también `firestore.rules` (sirve como copia de seguridad de las reglas; GitHub Pages no las aplica automáticamente).
+5. Hacé clic en **Commit changes**.
+6. En **Settings → Pages**, verificá que publique desde `main` y la carpeta `/ (root)`.
+7. Esperá a que termine el despliegue y abrí tu URL de GitHub Pages.
+
+## Paso 9 — Probar antes de compartir
+1. Abrí la web en dos navegadores o en una computadora y un celular.
+2. Reservá un horario desde uno; debe aparecer ocupado en el otro.
+3. Intentá reservar el mismo horario desde ambos casi al mismo tiempo; solo uno debe confirmarse.
+4. Ingresá a **ADMINISTRADOR** con el correo y contraseña de Firebase.
+5. Si el panel dice que la cuenta no tiene permisos, verificá que exista `admins/{UID}`.
+6. Probá eliminar una reserva desde el panel y comprobá que vuelve a estar disponible.
+
+## WhatsApp
+El botón abre `https://wa.me/542216713957` con el mensaje `Hola buenas! Quiero el turno de las [hora] el día [día].` El cliente tiene que tocar **Enviar** en WhatsApp. Una página estática no puede enviar mensajes por WhatsApp de forma silenciosa ni notificarte si el cliente no pulsa Enviar.
+
+## Notas de seguridad
+- Nunca publiques una contraseña de administrador dentro de `index.html`.
+- Los datos de reservas son accesibles al cliente web para poder pintar los horarios ocupados; el código de la interfaz no muestra nombres a los demás clientes. Para un negocio con mayor volumen o requisitos de privacidad estrictos, conviene mover las reservas a un backend con validación adicional y controles anti-spam.
+- Si exponés la página y recibís reservas falsas, añadí protección contra abuso (por ejemplo App Check o un backend).
+- La configuración Firebase de una app web identifica el proyecto, pero no sustituye las reglas de seguridad.
